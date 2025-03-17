@@ -96,4 +96,63 @@ function(input, output, session) {
     legend("topleft", legend = c(gsub(".NS", "", input$stock), "Nifty 50"),
            col = c("blue", "red"), lty = 1)
   })
+
+  # Reactive expression to get the daily change for all Nifty 50 stocks
+  daily_change_data <- eventReactive(input$fetch, {
+    all_company_data <- list()
+    for (symbol in nifty_50_companies) {
+      tryCatch({
+        data <- getSymbols(symbol, from = Sys.Date() - 5, to = Sys.Date(), auto.assign = FALSE)
+        if (!is.null(data) && nrow(data) >= 2) {
+          current_close <- Cl(data)[nrow(data)]
+          previous_close <- Cl(data)[nrow(data) - 1]
+          change <- current_close - previous_close
+          change_percent <- (change / previous_close) * 100
+          company_name <- names(nifty_50_companies)[nifty_50_companies == symbol]
+          all_company_data[[company_name]] <- data.frame(
+            Company = company_name,
+            Previous_Close = as.numeric(previous_close),
+            Current_Close = as.numeric(current_close),
+            Change = as.numeric(change),
+            Change_Percent = round(as.numeric(change_percent), 2)
+          )
+        } else {
+          company_name <- names(nifty_50_companies)[nifty_50_companies == symbol]
+          all_company_data[[company_name]] <- data.frame(
+            Company = company_name,
+            Previous_Close = NA,
+            Current_Close = NA,
+            Change = NA,
+            Change_Percent = NA,
+            Message = "Not enough data"
+          )
+        }
+      }, error = function(e) {
+        company_name <- names(nifty_50_companies)[nifty_50_companies == symbol]
+        all_company_data[[company_name]] <- data.frame(
+          Company = company_name,
+          Previous_Close = NA,
+          Current_Close = NA,
+          Change = NA,
+          Change_Percent = NA,
+          Error = paste("Error fetching data:", e$message)
+        )
+      })
+    }
+    bind_rows(all_company_data)
+  })
+
+  # Render the daily change data table
+  output$daily_change_table <- renderDT({
+    daily_data <- daily_change_data()
+    if (!is.null(daily_data) && nrow(daily_data) > 0) {
+      datatable(daily_data, options = list(pageLength = 50)) %>%
+        formatStyle(
+          'Change',
+          backgroundColor = styleInterval(0, c('red', 'lightgreen'))
+        )
+    } else {
+      datatable(data.frame(Message = "Daily change data not available."))
+    }
+  })
 }

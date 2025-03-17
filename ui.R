@@ -70,7 +70,8 @@ ui <- fluidPage(
       tabsetPanel(
         tabPanel("Stock Data", DTOutput("stock_table")),
         tabPanel("Stock Plot", plotOutput("stock_plot")),
-        tabPanel("Stock vs Nifty", plotOutput("comparison_plot"))
+        tabPanel("Stock vs Nifty", plotOutput("comparison_plot")),
+        tabPanel("Daily Change", DTOutput("daily_change_table"))
       )
     )
   )

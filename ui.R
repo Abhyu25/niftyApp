@@ -1,4 +1,5 @@
 # ui.R
+source("dependencies.R")
 library(shiny)
 
 # List of Nifty 50 companies and their symbols (as used by Yahoo Finance)
